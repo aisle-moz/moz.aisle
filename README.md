@@ -11,7 +11,8 @@ Getting Started
 ===============
 Firstly, you want to get c9v3, and get that running locally. Please follow the docs there.
 
-The clone moz.aisle into the plugins directory, and create symlinks for the settings and configs files.
+Then clone moz.aisle into the `plugins` directory, and run make inside
+`moz.aisle` to create symlinks for the settings and configs files.
 
 To start c9 as Aisle, pass in both config and settings:
     ~/.c9/node/bin/node server.js aisle -s aisle
