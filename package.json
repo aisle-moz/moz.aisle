@@ -1,0 +1,25 @@
+{
+  "name": "moz.aisle",
+  "description": "AISLE - Integrated Localizations Environment",
+  "version": "0.0.0",
+  "author": "Axel Hecht",
+  "contributors": [
+    {
+      "name": "Axel Hecht",
+      "email": "axel@pike.org"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aisle-moz/moz.aisle"
+  },
+  "plugins": {
+    "plugin": {}
+  },
+  "categories": [
+    "miscellaneous"
+  ],
+  "licenses": [
+    "MPL2"
+  ]
+}
