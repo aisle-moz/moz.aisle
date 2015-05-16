@@ -2,17 +2,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  
- "use client";
+"use client";
 "use mocha";
 
 define(function(require, exports, module) {
-    main.consumes = ["plugin.test", "myplugin"];
+    main.consumes = ["plugin.test", "moz.aisle"];
     main.provides = [];
     return main;
 
     function main(options, imports, register) {
         var test = imports["plugin.test"];
-        var myplugin = imports.myplugin;
+        var myplugin = imports["moz.aisle"];
         
         var describe = test.describe;
         var it = test.it;
@@ -25,7 +25,7 @@ define(function(require, exports, module) {
         
         /***** Initialization *****/
         
-        describe("The module", function(){
+        describe("The ace modes", function(){
             this.timeout(2000);
             
             beforeEach(function() {
@@ -34,15 +34,7 @@ define(function(require, exports, module) {
             afterEach(function () {
             });
             
-            it("has a sync test", function() {
-            });
-            
-            it("has a async test", function(done) {
-                done();
-            });
-            
-            it("has a failing test", function() {
-                assert.equal(10, 11);
+            it("are not tested", function() {
             });
         });
         
