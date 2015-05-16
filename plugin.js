@@ -13,7 +13,7 @@ define(function(require, exports, module) {
         
         /***** Initialization *****/
         
-        var plugin = new Plugin("Ajax.org", main.consumes);
+        var plugin = new Plugin("mozilla.org", main.consumes);
         var emit = plugin.getEmitter();
 
         function load() {
