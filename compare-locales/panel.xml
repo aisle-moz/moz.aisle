@@ -1,0 +1,9 @@
+<a:application xmlns:a="http://ajax.org/2005/aml">
+    <!-- <a:button id="btnTreeSettings"
+      skin="header-btn"
+      class="panel-settings" /> -->
+    <!-- <a:menu id="mnuCLSettings" />
+    <a:menu id="mnuCtxCL" />
+    contextmenu="mnuCtxCL" -->
+    <a:bar id="container" class="real moz-cl" focussable="true" height="100%"/>
+</a:application>

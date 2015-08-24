@@ -14,7 +14,8 @@
     "url": "https://github.com/aisle-moz/moz.aisle"
   },
   "plugins": {
-    "plugin": {}
+    "plugin": {},
+    "compare_locales": {}
   },
   "categories": [
     "miscellaneous"
