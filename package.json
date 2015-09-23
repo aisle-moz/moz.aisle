@@ -15,7 +15,8 @@
   },
   "plugins": {
     "plugin": {},
-    "compare_locales": {}
+    "compare_locales": {},
+    "compare_file": {}
   },
   "categories": [
     "miscellaneous"

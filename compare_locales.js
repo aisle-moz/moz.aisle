@@ -24,20 +24,31 @@ define(function(require, exports, module) {
         var panelIndex = options.index || 250;
 
         var markup = require('text!./compare-locales/panel.xml');
-        var configs;
+        var configs, data, shouldCompare=false;
 
         /***** Initialization *****/
 
         settings.on("read", function(){
             /* settings.setJson("project/moz.compare.locales", [
                 {
-                    "l10n": ".",
+                    "l10n": "/",
                     "locales": ["de"],
-                    "l10nini": ["mozilla-aurora", "browser/locales/l10n.ini"]
+                    "l10nini": ["/mozilla-aurora/", "browser/locales/l10n.ini"]
                 }
             ]); */
             configs = settings.getJson("project/moz_compare_locales");
-            compare();
+            // ensure all config directories end in '/'
+            configs.forEach(function(config) {
+                if (config.l10n.substr(-1) !== '/') {
+                    config.l10n += '/';
+                }
+                if (config.l10nini[0].substr(-1) !== '/') {
+                    config.l10nini[0] += '/';
+                }
+            });
+            if (shouldCompare) {
+                compare();
+            }
         }, plugin);
 
         var plugin = new Panel("mozilla.org", main.consumes, {
@@ -57,17 +68,13 @@ define(function(require, exports, module) {
         }
 
         function onDiskChange(event) {
-            console.log('afterWriteFile or afterRmfile', event);
-            if (!configs || !tree) return;
+            if (!configs) return;
             var p = event.path;
             var do_run = configs.some(function(c) {
-                if (p.indexOf('/' + c.l10nini[0]) == 0) {
+                if (p.indexOf(c.l10nini[0]) == 0) {
                     return true;
                 }
-                var l10nbase = '/';
-                if (c.l10n !== '.') {
-                    l10nbase += c.l10n + '/';
-                }
+                var l10nbase = c.l10n;
                 return c.locales.some(function(loc) {
                     return p.indexOf(l10nbase + loc) == 0;
                 });
@@ -78,12 +85,12 @@ define(function(require, exports, module) {
         }
 
         function compare() {
-            if (!configs || !tree) return;
+            if (!configs) return;
             proc.execFile("compare-locales", {
                 args: [
                     '--data=json',
-                    configs[0].l10nini.join('/'),
-                    configs[0].l10n,
+                    c9.workspaceDir + configs[0].l10nini.join(''),
+                    c9.workspaceDir + configs[0].l10n,
                     configs[0].locales[0]
                 ],
                 cwd: c9.workspaceDir,
@@ -91,7 +98,11 @@ define(function(require, exports, module) {
                 stderrEncoding: 'utf8'
             }, function(err, stdout, stderr) {
                 if (err) return console.error(err);
-                var data = JSON.parse(stdout);
+                data = JSON.parse(stdout);
+                emit("cl.update");
+                if (!tree) {
+                    return;
+                }
                 var root = {
                     label: configs[0].l10n,
                     isOpen: true,
@@ -138,6 +149,83 @@ define(function(require, exports, module) {
                 fillChildren(data.details.children, root);
                 tree.setRoot(root);
             });
+        }
+
+        function get_data(path) {
+            var l10n, ref, found_config;
+            if (!configs || !data) {
+                compare();
+                shouldCompare = true;
+                return null;
+            }
+            var having_data = configs.some(function(config) {
+                if (path.indexOf(config.l10nini[0]) == 0) {
+                    ref = path;
+                    found_config = config;
+                    return true;
+                }
+                return config.locales.some(function(loc) {
+                    if (path.indexOf(config.l10n + loc) == 0) {
+                        l10n = path;
+                        found_config = config;
+                        return true;
+                    }
+                });
+            });
+            if (!having_data) {
+                return null;
+            }
+            console.log(found_config, l10n, ref, 'found config');
+            if (!l10n) {
+                return false;
+            }
+
+            // strip leading l10nbase.
+            var subpath = l10n.substr(found_config.l10n.length);
+            var relpath = subpath.split('/').slice(1);
+            function findReference(resolve, reject) {
+                var offset = 1;
+                function exists() {
+                    var _p, segs = relpath.concat([]);  // copy
+                    segs.splice(offset, 0, 'locales', 'en-US');
+                    _p = found_config.l10nini[0] + segs.join('/');
+                    console.log('trying reference', _p);
+                    fs.exists(_p, function(found) {
+                        if (found) {
+                            resolve(_p);
+                            return;
+                        }
+                        ++offset;
+                        if (offset >= relpath.length) {
+                            reject({msg: 'no reference found', path: path});
+                            return;
+                        }
+                        exists();
+                    });
+                }
+                exists();
+            }
+            var node = data.details;
+            while (subpath && node) {
+                if (!node.children) {
+                    return null;
+                }
+                for (var i=0, ii=node.children.length; i < ii; ++i) {
+                    var leaf = node.children[i][0];
+                    var child = node.children[i][1];
+                    if (subpath === leaf) {
+                        return [l10n, new Promise(findReference), child.value];
+                    }
+                    if (subpath.indexOf(leaf + '/') === 0) {
+                        subpath = subpath.substr(leaf.length + 1);
+                        node = child;
+                        break;
+                    }
+                }
+                if (i === ii) {
+                    return null;  // not found
+                }
+            }
         }
 
         /***** Methods *****/
@@ -213,7 +301,11 @@ define(function(require, exports, module) {
                         parent = parent.parent;
                     }
                     if (!node.missingFile) {
-                        return tabs.openFile(path, node === active);
+                        return tabs.open({
+                            path: path,
+                            active: node === active,
+                            pane: l10n_pane
+                        });
                     }
                     // now it's getting async, we need to create the file first
                     // first, we might need the dir
@@ -236,15 +328,22 @@ define(function(require, exports, module) {
             load();
         });
         plugin.on("unload", function() {
-            tree = container = null;
-            configs = null;
+            tree = container = data = null;
+            configs = shouldCompare = null;
         });
 
         /***** Register and define API *****/
 
         plugin.freezePublicAPI({
             get configs() { return configs; },
-            get tree() { return tree; }
+            get tree() { return tree; },
+            get_data: get_data,
+            _events: [
+                /**
+                 * Fires when new compare-locales data is available
+                 **/
+                "cl.update"
+            ]
         });
 
         register(null, {
