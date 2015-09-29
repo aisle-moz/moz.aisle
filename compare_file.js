@@ -84,6 +84,13 @@ define(function(require, exports, module) {
             });
             update();
         });
+
+        // XXX Hack, make sure that container is shown, and resize just in case
+        plugin.on("show", function(e) {
+            container.show();
+            if (!tree) return;
+            setTimeout(tree.resize.bind(tree), 100);
+        });
         
         function set_model() {
             if (!tree) return;
@@ -119,7 +126,6 @@ define(function(require, exports, module) {
             }
             tree.setRoot(items);
             tree.model.showAllNodes();
-            tree.resize(true);
         }
 
 

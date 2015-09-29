@@ -322,6 +322,13 @@ define(function(require, exports, module) {
             compare();
         });
 
+        // XXX Hack, make sure that container is shown, and resize just in case
+        plugin.on("show", function(e) {
+            container.show();
+            if (!tree) return;
+            setTimeout(tree.resize.bind(tree), 100);
+        });
+        
         /***** Lifecycle *****/
 
         plugin.on("load", function() {
