@@ -49,6 +49,7 @@ define(function(require, exports, module) {
                 container: container.$int,
                 emptyMessage: "No comparison found",
                 rowHeight: 30,
+                theme: "custom-tree ace-tree-list blackdg",
                 dataType: "object",
                 renderRow: function(row, html, config) { 
                     var node = this.root.items[row];
