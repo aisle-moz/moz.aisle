@@ -24,7 +24,7 @@ define(function(require, exports, module) {
         var panelIndex = options.index || 250;
 
         var markup = require('text!./compare-locales/panel.xml');
-        var our_settings, data, shouldCompare=false;
+        var our_settings, dropdown, data, shouldCompare=false;
 
         /***** Initialization *****/
 
@@ -39,6 +39,7 @@ define(function(require, exports, module) {
                     config.repo += '/';
                 }
             });
+            drawDropDown();
             if (shouldCompare) {
                 compare();
             }
@@ -79,11 +80,19 @@ define(function(require, exports, module) {
 
         function compare() {
             if (!our_settings) return;
+            var using = our_settings.configs[0];
+            if (dropdown.visible && dropdown.selected) {
+                our_settings.configs.forEach(function(config) {
+                    if (config.label === dropdown.selected.caption) {
+                        using = config;
+                    }
+                });
+            }
             proc.execFile("compare-locales", {
                 args: [
                     '--data=json',
-                    c9.workspaceDir + our_settings.configs[0].repo + our_settings.configs[0].ini,
-                    c9.workspaceDir + our_settings.configs[0].l10n,
+                    c9.workspaceDir + using.repo + using.ini,
+                    c9.workspaceDir + using.l10n,
                     our_settings.locale
                 ],
                 cwd: c9.workspaceDir,
@@ -97,7 +106,7 @@ define(function(require, exports, module) {
                     return;
                 }
                 var root = {
-                    label: our_settings.configs[0].l10n,
+                    label: using.l10n,
                     isOpen: true,
                     items: []
                 };
@@ -229,6 +238,13 @@ define(function(require, exports, module) {
             // Insert markup
             ui.insertMarkup(e.aml, markup, plugin);
             container = plugin.getElement("container");
+            dropdown = plugin.getElement("project");
+            dropdown.on('afterselect', function() {
+                console.log('afterchange calls compare', arguments);
+                settings.set('state/moz_compare_locales/selected',
+                    dropdown.selected && dropdown.selected.caption || null);
+                compare();
+            });
 
             tree = new Datagrid({
                 container: container.$int,
@@ -310,8 +326,36 @@ define(function(require, exports, module) {
                     });
                 });
             });
+            drawDropDown();
             compare();
         });
+
+        function drawDropDown() {
+            if (!our_settings || !dropdown) return;
+            while (dropdown.visible && dropdown.childNodes) {
+                dropdown.removeChild(dropdown.childNodes[0]);
+            }
+            if (our_settings.configs.length === 1) {
+                dropdown.hide();
+                return;
+            }
+            dropdown.show();
+            our_settings.configs.forEach(function(config) {
+                dropdown.appendChild(new ui.item({
+                    caption: config.label
+                }));
+            });
+            var using = dropdown.childNodes[0];
+            var state = settings.get('state/moz_compare_locales/selected');
+            if (state) {
+                dropdown.childNodes.forEach(function(node) {
+                    if (node.caption === state) {
+                        using = node;
+                    }
+                });
+            }
+            dropdown.select(using);
+        }
 
         // XXX Hack, make sure that container is shown, and resize just in case
         plugin.on("show", function(e) {
@@ -326,7 +370,7 @@ define(function(require, exports, module) {
             load();
         });
         plugin.on("unload", function() {
-            tree = container = data = null;
+            tree = container = dropdown = data = null;
             our_settings = shouldCompare = null;
         });
 

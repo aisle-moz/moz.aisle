@@ -5,5 +5,7 @@
     <!-- <a:menu id="mnuCLSettings" />
     <a:menu id="mnuCtxCL" />
     contextmenu="mnuCtxCL" -->
+    <a:dropdown visible="0" id="project">
+    </a:dropdown>
     <a:bar id="container" class="real moz-cl" focussable="true" height="100%"/>
 </a:application>
