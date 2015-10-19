@@ -24,32 +24,27 @@ define(function(require, exports, module) {
         var panelIndex = options.index || 250;
 
         var markup = require('text!./compare-locales/panel.xml');
-        var configs, data, shouldCompare=false;
+        var our_settings, data, shouldCompare=false;
 
         /***** Initialization *****/
 
-        settings.on("read", function(){
-            /* settings.setJson("project/moz.compare.locales", [
-                {
-                    "l10n": "/",
-                    "locales": ["de"],
-                    "l10nini": ["/mozilla-aurora/", "browser/locales/l10n.ini"]
-                }
-            ]); */
-            configs = settings.getJson("project/moz_compare_locales");
+        function onSettings() {
+            our_settings = settings.getJson("project/moz_compare_locales");
             // ensure all config directories end in '/'
-            configs.forEach(function(config) {
+            our_settings.configs.forEach(function(config) {
                 if (config.l10n.substr(-1) !== '/') {
                     config.l10n += '/';
                 }
-                if (config.l10nini[0].substr(-1) !== '/') {
-                    config.l10nini[0] += '/';
+                if (config.repo.substr(-1) !== '/') {
+                    config.repo += '/';
                 }
             });
             if (shouldCompare) {
                 compare();
             }
-        }, plugin);
+        }
+        settings.on("read", onSettings, plugin);
+        settings.on("project/moz_compare_locales", onSettings, plugin);
 
         var plugin = new Panel("mozilla.org", main.consumes, {
             index: panelIndex,
@@ -68,16 +63,14 @@ define(function(require, exports, module) {
         }
 
         function onDiskChange(event) {
-            if (!configs) return;
+            if (!our_settings) return;
             var p = event.path;
-            var do_run = configs.some(function(c) {
-                if (p.indexOf(c.l10nini[0]) == 0) {
+            var do_run = our_settings.configs.some(function(c) {
+                if (p.indexOf(c.repo) == 0) {
                     return true;
                 }
                 var l10nbase = c.l10n;
-                return c.locales.some(function(loc) {
-                    return p.indexOf(l10nbase + loc) == 0;
-                });
+                return p.indexOf(l10nbase + our_settings.locale) == 0;
             });
             if (do_run) {
                 compare();
@@ -85,13 +78,13 @@ define(function(require, exports, module) {
         }
 
         function compare() {
-            if (!configs) return;
+            if (!our_settings) return;
             proc.execFile("compare-locales", {
                 args: [
                     '--data=json',
-                    c9.workspaceDir + configs[0].l10nini.join(''),
-                    c9.workspaceDir + configs[0].l10n,
-                    configs[0].locales[0]
+                    c9.workspaceDir + our_settings.configs[0].repo + our_settings.configs[0].ini,
+                    c9.workspaceDir + our_settings.configs[0].l10n,
+                    our_settings.locale
                 ],
                 cwd: c9.workspaceDir,
                 stdoutEncoding: 'utf8',
@@ -104,7 +97,7 @@ define(function(require, exports, module) {
                     return;
                 }
                 var root = {
-                    label: configs[0].l10n,
+                    label: our_settings.configs[0].l10n,
                     isOpen: true,
                     items: []
                 };
@@ -153,24 +146,22 @@ define(function(require, exports, module) {
 
         function get_data(path) {
             var l10n, ref, found_config;
-            if (!configs || !data) {
+            if (!our_settings || !data) {
                 compare();
                 shouldCompare = true;
                 return null;
             }
-            var having_data = configs.some(function(config) {
-                if (path.indexOf(config.l10nini[0]) == 0) {
+            var having_data = our_settings.configs.some(function(config) {
+                if (path.indexOf(config.repo) == 0) {
                     ref = path;
                     found_config = config;
                     return true;
                 }
-                return config.locales.some(function(loc) {
-                    if (path.indexOf(config.l10n + loc) == 0) {
+                if (path.indexOf(config.l10n + our_settings.locale) == 0) {
                         l10n = path;
                         found_config = config;
                         return true;
-                    }
-                });
+                }
             });
             if (!having_data) {
                 return null;
@@ -188,7 +179,7 @@ define(function(require, exports, module) {
                 function exists() {
                     var _p, segs = relpath.concat([]);  // copy
                     segs.splice(offset, 0, 'locales', 'en-US');
-                    _p = found_config.l10nini[0] + segs.join('/');
+                    _p = found_config.repo + segs.join('/');
                     console.log('trying reference', _p);
                     fs.exists(_p, function(found) {
                         if (found) {
@@ -336,13 +327,13 @@ define(function(require, exports, module) {
         });
         plugin.on("unload", function() {
             tree = container = data = null;
-            configs = shouldCompare = null;
+            our_settings = shouldCompare = null;
         });
 
         /***** Register and define API *****/
 
         plugin.freezePublicAPI({
-            get configs() { return configs; },
+            get setting() { return our_settings; },
             get tree() { return tree; },
             get_data: get_data,
             _events: [

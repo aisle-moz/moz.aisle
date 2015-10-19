@@ -1,0 +1,30 @@
+<a:bar xmlns:a="http://ajax.org/2005/aml" class="platform">
+    <a:bar id="aisleprefs" class="container" style="
+    overflow-y: auto;
+    overflow-x: hidden;
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    right: 0px;
+    bottom: 0px;
+    padding-bottom: 130px;">
+        <div class="basic intro">
+            <h1>Aisle</h1>
+            <p>Set up your <code>l10n.ini</code> paths, locale, l10n repos, etc.</p>
+            <p>Add a new project:</p>
+            <a:hbox height="40">
+                <a:button id="btnAddCompareLocales"
+                    style="line-height: 22px" height="24" margin="-2 5 -2 0"
+                    skin="blackbutton">compare-locales</a:button>
+                <a:button id="btnAddCompareDirs" disabled="true"
+                    style="line-height: 22px" height="24" margin="-2 0 -2 0"
+                    skin="blackbutton">compare-dirs</a:button>
+            </a:hbox>
+        </div>
+        <a:hbox height="40">
+            <a:label width="100">Locale code</a:label>
+            <a:textbox class="locale" width="200" initial-message="ab-CD" skin='texbox'/>
+        </a:hbox>
+        <a:divider skin="c9-divider-hor" margin="5 0 5 0" />
+    </a:bar>
+</a:bar>

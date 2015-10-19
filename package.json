@@ -16,7 +16,8 @@
   "plugins": {
     "plugin": {},
     "compare_locales": {},
-    "compare_file": {}
+    "compare_file": {},
+    "preferences": {}
   },
   "categories": [
     "miscellaneous"
