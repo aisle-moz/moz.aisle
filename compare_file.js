@@ -4,23 +4,20 @@
 
 define(function(require, exports, module) {
     "use strict";
-    main.consumes = ["Panel", "Form", "List",
-        "moz_compare_locales",
-        "c9", "fs", "layout", "proc", "tabManager", "ui", "vfs"];
+    main.consumes = [
+        "Panel", "List", "c9", "layout", "tabManager", "ui",
+        "moz_compare_locales"
+    ];
     main.provides = ["moz_compare_file"];
     return main;
 
     function main(options, imports, register) {
         var Panel = imports.Panel;
         var List = imports.List;
-        var Form = imports.Form;
         var c9 = imports.c9;
         var layout = imports.layout;
-        var proc = imports.proc;
         var tabs = imports.tabManager;
         var ui = imports.ui;
-        var vfs = imports.vfs;
-        var fs = imports.fs;
         var cl = imports.moz_compare_locales;
         var panelIndex = options.index || 251;
         var minWidth = options.minWidth || 300;
@@ -63,18 +60,18 @@ define(function(require, exports, module) {
             }, plugin);
 
             tree.on('select', function(e, some) {
-                var active = tree.selection.getCursor();
+                var tab, active = tree.selection.getCursor();
                 if (active.kind === 'heading') {
                     console.log('heading selected', e, some);
                 }
                 if (active.kind === 'obsoleteEntity' && active.key) {
-                    var tab = tabs.focussedTab;
+                    tab = tabs.focussedTab;
                     if (tab && tab.editor && tab.editor.ace) {
                         tab.editor.ace.find(active.key, {backwards: true});
                     }
                 }
                 if (active.kind === 'missingEntity' && active.key && reffile) {
-                    var tab = tabs.findTab(reffile);
+                    tab = tabs.findTab(reffile);
                     if (tab && tab.editor && tab.editor.ace) {
                         tab.editor.ace.find(active.key, {
                             backwards: true,
