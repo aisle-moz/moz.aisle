@@ -158,13 +158,15 @@ define(function(require, exports, module) {
                         })
                             .catch(console.log.bind(console));
                     }
-                    set_model();
+                }
+                else {
+                    data = undefined;
                 }
             }
             else {
                 l10nfile = reffile = data = undefined;
-                set_model();
             }
+            set_model();
         }
 
         function ensureRefOpened() {

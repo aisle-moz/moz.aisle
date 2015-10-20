@@ -81,7 +81,7 @@ define(function(require, exports, module) {
         function compare() {
             if (!our_settings) return;
             var using = our_settings.configs[0];
-            if (dropdown.visible && dropdown.selected) {
+            if (dropdown && dropdown.visible && dropdown.selected) {
                 our_settings.configs.forEach(function(config) {
                     if (config.label === dropdown.selected.caption) {
                         using = config;
@@ -332,7 +332,7 @@ define(function(require, exports, module) {
 
         function drawDropDown() {
             if (!our_settings || !dropdown) return;
-            while (dropdown.visible && dropdown.childNodes) {
+            while (dropdown.visible && dropdown.childNodes.length) {
                 dropdown.removeChild(dropdown.childNodes[0]);
             }
             if (our_settings.configs.length === 1) {
