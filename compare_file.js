@@ -26,6 +26,8 @@ define(function(require, exports, module) {
 
         var tree, container, l10nfile, reffile, data;
 
+        /***** Initialization *****/
+
         var plugin = new Panel("mozilla.org", main.consumes, {
             index: panelIndex,
             minWidth: minWidth,
@@ -34,7 +36,16 @@ define(function(require, exports, module) {
 
         /***** Methods *****/
 
-        plugin.on("draw", function(e){
+        function load() {
+            console.log('compare-file loaded');
+            tabs.on("tabAfterActivate", update);
+            cl.on("cl.update", update);
+            layout.on('resize', function() {
+                tree && tree.resize();
+            });
+        }
+
+        function draw(e) {
             // Insert css
             ui.insertCss(require('text!./style/compare.less'), options.staticPrefix, plugin);
             ui.insertCss(require('text!./style/open-iconic.less'), options.staticPrefix, plugin);
@@ -81,14 +92,7 @@ define(function(require, exports, module) {
                 }
             });
             update();
-        });
-
-        // XXX Hack, make sure that container is shown, and resize just in case
-        plugin.on("show", function(e) {
-            container.show();
-            if (!tree) return;
-            setTimeout(tree.resize.bind(tree), 100);
-        });
+        }
         
         function set_model() {
             if (!tree) return;
@@ -124,16 +128,6 @@ define(function(require, exports, module) {
             }
             tree.setRoot(items);
             tree.model.showAllNodes();
-        }
-
-
-        function load() {
-            console.log('compare-file loaded');
-            tabs.on("tabAfterActivate", update);
-            cl.on("cl.update", update);
-            layout.on('resize', function() {
-                tree && tree.resize();
-            });
         }
 
         function update(e) {
@@ -190,7 +184,16 @@ define(function(require, exports, module) {
         });
         plugin.on("unload", function() {
             tree = container = data = null;
-            l10nfile = null;
+            l10nfile = reffile = null;
+        });
+
+        plugin.on("draw", draw);
+
+        // XXX Hack, make sure that container is shown, and resize just in case
+        plugin.on("show", function(e) {
+            container.show();
+            if (!tree) return;
+            setTimeout(tree.resize.bind(tree), 100);
         });
 
         /***** Register and define API *****/
