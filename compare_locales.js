@@ -6,7 +6,7 @@ define(function(require, exports, module) {
     "use strict";
     main.consumes = [
         "Panel", "Datagrid", "layout",
-        "fs", "settings", "tabManager", "ui",
+        "fs", "settings", "tabManager", "panels", "ui",
         "c9", "proc"  // only used in ./compare-locales/data.js
     ];
     main.provides = ["moz_compare_locales"];
@@ -16,6 +16,7 @@ define(function(require, exports, module) {
         var Panel = imports.Panel;
         var Datagrid = imports.Datagrid;
         var layout = imports.layout;
+        var panels = imports.panels;
         var settings = imports.settings;
         var tabs = imports.tabManager;
         var ui = imports.ui;
@@ -186,9 +187,7 @@ define(function(require, exports, module) {
             tree.on('afterChoose', function(e, some) {
                 var nodes = tree.selection.getSelectedNodes();
                 var active = tree.selection.getCursor();
-                var panes = tabs.getPanes();
-                var l10n_pane = panes[0];
-                var en_US_pane = panes[1];
+                var l10n_pane = getL10nPane();
                 nodes.forEach(function(node) {
                     var path = node.label;
                     var parent = node.parent;
@@ -197,11 +196,13 @@ define(function(require, exports, module) {
                         parent = parent.parent;
                     }
                     if (!node.missingFile) {
-                        return tabs.open({
+                        var tab = tabs.open({
                             path: path,
                             active: node === active,
                             pane: l10n_pane
                         });
+                        panels.activate('moz_compare_file');
+                        return tab;
                     }
                     // now it's getting async, we need to create the file first
                     // first, we might need the dir
@@ -210,7 +211,12 @@ define(function(require, exports, module) {
                         console.log('mkdirP', err);
                         fs.writeFile(path, '', function(err) {
                             console.log('writeFile', err);
-                            tabs.openFile(path, node === active);
+                            tabs.open({
+                                path: path,
+                                active: node === active,
+                                pane: l10n_pane
+                            });
+                            panels.activate('moz_compare_file');
                         });
                     });
                 });
@@ -247,7 +253,20 @@ define(function(require, exports, module) {
             }
             dropdown.select(using);
         }
-        
+
+        function getL10nPane() {
+            return tabs.getPanes()[0];
+        }
+
+        function getEnPane() {
+            var panes = tabs.getPanes();
+            if (panes.length < 2) {
+                panes[0].vsplit(true);
+                panes = tabs.getPanes();
+            }
+            return panes[1];
+        }
+
         /***** Lifecycle *****/
 
         plugin.on("load", function() {
@@ -275,6 +294,8 @@ define(function(require, exports, module) {
                     dropdown.selected.caption : null;
             },
             get_data: Data.get_data,
+            getL10nPane: getL10nPane,
+            getEnPane: getEnPane,
             _events: [
                 /**
                  * Fires when new compare-locales data is available

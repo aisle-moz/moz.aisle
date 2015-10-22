@@ -167,10 +167,9 @@ define(function(require, exports, module) {
                 tab.activate();
             }
             if (!tab) {
-                var panes = tabs.getPanes();
                 tabs.open({
                     path: reffile,
-                    pane: panes[panes.length - 1],
+                    pane: cl.getEnPane(),
                     focus: false,
                     active: true
                 }, function(_t) {});
