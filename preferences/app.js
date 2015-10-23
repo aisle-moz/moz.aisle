@@ -4,7 +4,7 @@
 
 define(function(require, exports, module) {
     var EventEmitter = require("events").EventEmitter;
-    module.exports = function(ui, dialog_file, dialog_alert) {
+    module.exports = function(ui, fs, dialog_file, dialog_alert) {
         function AppUI(config) {
             var emitter = new EventEmitter();
             this.config = config;
@@ -77,7 +77,7 @@ define(function(require, exports, module) {
             },
             createBaseUI: function() {
                 this.$l10n = new ui.button({
-                    caption: this.config.l10n || '',
+                    caption: this.config.l10n || '/',
                     skin: 'blackbutton',
                     height: 24,
                     margin: "-2 0 -2 0",
@@ -96,16 +96,9 @@ define(function(require, exports, module) {
                 });
             },
             createIniUI: function() {
-                this.$repo = new ui.button({
-                    caption: this.config.repo || '/',
-                    skin: 'blackbutton',
-                    height: 24,
-                    margin: "-2 0 -2 0",
-                    style: "line-height:22px",
-                    onclick: this.onRepoClick.bind(this)
-                });
+                this.$repo = this.config.repo || '/',
                 this.$ini = new ui.button({
-                    caption: this.config.ini || '',
+                    caption: this.$repo + (this.config.ini || 'l10n.ini'),
                     skin: 'blackbutton',
                     height: 24,
                     margin: "-2 0 -2 0",
@@ -119,7 +112,6 @@ define(function(require, exports, module) {
                             caption: 'l10n.ini: ',
                             width: 100
                         }),
-                        this.$repo,
                         this.$ini
                     ]
                 });
@@ -145,46 +137,54 @@ define(function(require, exports, module) {
                     hideFileInput: true
                 });
             },
-            onRepoClick: function (e) {
-                var that = this;
-                var button = this.$repo;
-                var currentPath = button.caption;
-                dialog_file.show('Select en-US repository', currentPath,
-                function(directory, stat, hide) {
-                    if (directory !== '/') directory += '/';
-                    button.setCaption(directory);
-                    hide();
-                    that.savePrefs();
-                },
-                function() {},
-                {
-                    chooseCaption: "Select",
-                    createFolderButton: false,
-                    hideFileInput: true
-                });
-            },
             onIniClick: function (e) {
-                var that = this;
                 var button = this.$ini;
-                var repo = this.$repo.caption;
-                var currentPath = repo + (button.caption || 'l10n.ini');
+                var repo = this.$repo;
+                var currentPath = button.caption || (repo + 'l10n.ini');
                 dialog_file.show('Select repository', currentPath,
-                function(path, stat, hide) {
-                    if (stat === false || path.substr(0, repo.length) !== repo) {
-                        hide();
-                        dialog_alert.show('l10n.ini',
-                            'Ini file not in repository',
-                            'The l10n.ini file needs to be in the chosen repo.');
-                        return;
-                    }
-                    button.setCaption(path.substr(repo.length));
-                    hide();
-                    that.savePrefs();
-                },
+                this.onChooseIni.bind(this),
                 function() {},
                 {
                     chooseCaption: "Select",
                     createFolderButton: false
+                });
+            },
+            onChooseIni: function(path, stat, hide) {
+                var that = this;
+                if (stat === false) {
+                    hide();
+                    dialog_alert.show('l10n.ini',
+                        'Ini file does not exist',
+                        'Please select an existing file.'
+                    );
+                    return;
+                }
+                fs.readFile(path, function(err, content) {
+                    if (err) {
+                        hide();
+                        console.log(err);
+                        return;
+                    }
+                    var lines = content.split('\n');
+                    var depth, offset = lines.indexOf('[general]') + 1;
+                    for (var i=offset, ii=lines.length; i<ii; ++i) {
+                        var match = /depth\s*[=:]\s*(.*)/.exec(lines[i]);
+                        if (match) {
+                            depth = match[1];
+                            break;
+                        }
+                    }
+                    var path_segments = path.split('/'), ini_segments = [];
+                    var depth_segments = depth.split('/');
+                    ini_segments.unshift(path_segments.pop());
+                    while (depth_segments.pop() === '..') {
+                        ini_segments.unshift(path_segments.pop());
+                    }
+                    path_segments.push('');
+                    that.$repo = path_segments.join('/');
+                    that.$ini.setCaption(that.$repo + ini_segments.join('/'));
+                    hide();
+                    that.savePrefs();
                 });
             },
             /**
@@ -194,8 +194,8 @@ define(function(require, exports, module) {
                 return {
                     type: 'app',
                     label: this.$label ? this.$label.value : '',
-                    repo: this.$repo && this.$repo.caption || '/',
-                    ini: this.$ini && this.$ini.caption || 'l10n.ini',
+                    repo: this.$repo,
+                    ini: this.$ini && (this.$ini.caption.substr(this.$repo.length)) || 'l10n.ini',
                     l10n: this.$l10n && this.$l10n.caption || '/',
                 };
             }

@@ -10,7 +10,11 @@
     padding-bottom: 130px;">
         <div class="basic intro">
             <h1>Aisle</h1>
-            <p>Set up your <code>l10n.ini</code> paths, locale, l10n repos, etc.</p>
+            <p>Set up your locale, l10n repos, <code>l10n.ini</code> paths, etc.</p>
+            <p style="white-space: normal">For projects like Firefox, use <code>compare-locales</code>.
+            Select the basedirectory where your locale is checked out.
+            Then select the <code>l10n.ini</code> file to use, something
+            like <code>/mozilla-aurora/browser/locales/l10n.ini</code>.</p>
             <p>Add a new project:</p>
             <a:hbox height="40">
                 <a:button id="btnAddCompareLocales"

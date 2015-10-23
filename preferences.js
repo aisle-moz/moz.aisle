@@ -5,7 +5,7 @@
 define(function(require, exports, module) {
     "use strict";
     main.consumes = [
-        "PreferencePanel", "ui", "dialog.alert", "dialog.file", "settings",
+        "PreferencePanel", "fs", "ui", "dialog.alert", "dialog.file", "settings",
         "preferences", "c9"
     ];
     main.provides = ["moz.aisle.preferences"];
@@ -18,6 +18,7 @@ define(function(require, exports, module) {
         var ui = imports.ui;
         var AppUI = require('./preferences/app')(
             ui,
+            imports.fs,
             imports['dialog.file'],
             imports['dialog.alert']
         ).AppUI;
