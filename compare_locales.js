@@ -58,11 +58,7 @@ define(function(require, exports, module) {
             if (!our_settings) return;
             var p = event.path;
             var do_run = our_settings.configs.some(function(c) {
-                if (p.indexOf(c.repo) === 0) {
-                    return true;
-                }
-                var l10nbase = c.l10n;
-                return p.indexOf(l10nbase + our_settings.locale) === 0;
+                return Data.config_covers(c, p);
             });
             if (do_run) {
                 Data.compare();
@@ -292,6 +288,9 @@ define(function(require, exports, module) {
             get active() {
                 return dropdown && dropdown.selected ?
                     dropdown.selected.caption : null;
+            },
+            get locale() {
+                return our_settings && our_settings.locale;
             },
             get_data: Data.get_data,
             getL10nPane: getL10nPane,

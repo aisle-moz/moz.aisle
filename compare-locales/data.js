@@ -67,30 +67,17 @@ define(function(require, exports, module) {
                 return null;
             }
             var having_data = our_settings.configs.some(function(config) {
-                switch (config.type) {
-                    case "dirs":
-                        if (path.indexOf(config.base + 'en-US') === 0) {
-                            ref = path;
-                            found_config = config;
-                            return true;
-                        }
-                        if (path.indexOf(config.base + our_settings.locale) === 0) {
-                            l10n = path;
-                            found_config = config;
-                            return true;
-                        }
-                        break;
+                switch (config_covers(config, path)) {
+                    case "ref":
+                        ref = path;
+                        found_config = config;
+                        return true;
+                    case "l10n":
+                        l10n = path;
+                        found_config = config;
+                        return true;
                     default:
-                        if (path.indexOf(config.repo) === 0) {
-                            ref = path;
-                            found_config = config;
-                            return true;
-                        }
-                        if (path.indexOf(config.l10n + our_settings.locale) === 0) {
-                            l10n = path;
-                            found_config = config;
-                            return true;
-                        }
+                        break;
                 }
             });
             if (!having_data) {
@@ -134,7 +121,6 @@ define(function(require, exports, module) {
                 }
                 exists();
             }
-            console.log(subpath, 'prior');
             function findDirsReference(resolve, reject) {
                 relpath.unshift('en-US');
                 resolve(found_config.base + relpath.join('/'));
@@ -162,9 +148,33 @@ define(function(require, exports, module) {
             }
         }
 
+        function config_covers(config, path) {
+            var locale = plugin.locale;
+            if (!locale) return;
+            switch (config.type) {
+                case "app":
+                    if (path.indexOf(config.repo) === 0) {
+                        return 'ref';
+                    }
+                    if (path.indexOf(config.l10n + locale) === 0) {
+                        return 'l10n';
+                    }
+                    break;
+                case "dirs":
+                    if (path.indexOf(config.base + 'en-US') === 0) {
+                        return 'ref';
+                    }
+                    if (path.indexOf(config.base + locale) === 0) {
+                        return 'l10n';
+                    }
+                    break;
+            }
+        }
+
         return {
             compare: compare,
-            get_data: get_data
+            get_data: get_data,
+            config_covers: config_covers
         };
     };
 });
