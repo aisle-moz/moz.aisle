@@ -22,6 +22,12 @@ define(function(require, exports, module) {
             imports['dialog.file'],
             imports['dialog.alert']
         ).AppUI;
+        var DirsUI = require('./preferences/dirs')(
+            ui,
+            imports.fs,
+            imports['dialog.file'],
+            imports['dialog.alert']
+        ).DirsUI;
         var c9 = imports.c9;
 
         var markup = require('text!./preferences.xml');
@@ -52,6 +58,8 @@ define(function(require, exports, module) {
             container = plugin.getElement("aisleprefs");
             plugin.getElement("btnAddCompareLocales")
                 .on("click", addConfig.bind(null, {type: "app"}));
+            plugin.getElement("btnAddCompareDirs")
+                .on("click", addConfig.bind(null, {type: "dirs"}));
 
             settings.once("read", function() {
                 var our_settings = settings.getJson("project/moz_compare_locales");
@@ -104,6 +112,9 @@ define(function(require, exports, module) {
                 case "app":
                     configUI = new AppUI(config);
                     break;
+                case "dirs":
+                    configUI = new DirsUI(config);
+                    break;
                 default:
                     throw "Need to pass a config.type to addConfig";
             }
@@ -142,7 +153,8 @@ define(function(require, exports, module) {
              */
              savePrefs : savePrefs,
              addConfig: addConfig,
-             AppUI: AppUI
+             AppUI: AppUI,
+             DirsUI: DirsUI
         });
 
         register(null, {

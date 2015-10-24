@@ -35,13 +35,21 @@ define(function(require, exports, module) {
                     }
                 });
             }
-            proc.execFile("compare-locales", {
-                args: [
-                    '--data=json',
-                    c9.workspaceDir + using.repo + using.ini,
-                    c9.workspaceDir + using.l10n,
-                    our_settings.locale
-                ],
+            var cmd, args = ['--data=json'];
+            switch (using.type) {
+                case "dirs":
+                    cmd = 'compare-dirs';
+                    args.push(c9.workspaceDir + using.base + 'en-US');
+                    args.push(c9.workspaceDir + using.base + our_settings.locale);
+                    break;
+                default:
+                    cmd = 'compare-locales';
+                    args.push(c9.workspaceDir + using.repo + using.ini);
+                    args.push(c9.workspaceDir + using.l10n);
+                    args.push(our_settings.locale);
+            }
+            proc.execFile(cmd, {
+                args: args,
                 cwd: c9.workspaceDir,
                 stdoutEncoding: 'utf8',
                 stderrEncoding: 'utf8'
@@ -59,15 +67,30 @@ define(function(require, exports, module) {
                 return null;
             }
             var having_data = our_settings.configs.some(function(config) {
-                if (path.indexOf(config.repo) === 0) {
-                    ref = path;
-                    found_config = config;
-                    return true;
-                }
-                if (path.indexOf(config.l10n + our_settings.locale) === 0) {
-                    l10n = path;
-                    found_config = config;
-                    return true;
+                switch (config.type) {
+                    case "dirs":
+                        if (path.indexOf(config.base + 'en-US') === 0) {
+                            ref = path;
+                            found_config = config;
+                            return true;
+                        }
+                        if (path.indexOf(config.base + our_settings.locale) === 0) {
+                            l10n = path;
+                            found_config = config;
+                            return true;
+                        }
+                        break;
+                    default:
+                        if (path.indexOf(config.repo) === 0) {
+                            ref = path;
+                            found_config = config;
+                            return true;
+                        }
+                        if (path.indexOf(config.l10n + our_settings.locale) === 0) {
+                            l10n = path;
+                            found_config = config;
+                            return true;
+                        }
                 }
             });
             if (!having_data) {
@@ -79,9 +102,17 @@ define(function(require, exports, module) {
             }
 
             // strip leading l10nbase.
-            var subpath = l10n.substr(found_config.l10n.length);
-            var relpath = subpath.split('/').slice(1);
-            function findReference(resolve, reject) {
+            var subpath, relpath;
+            if (found_config.type === 'app') {
+                subpath = l10n.substr(found_config.l10n.length);
+                relpath = subpath.split('/').slice(1);
+            }
+            else {
+                subpath = l10n.substr(found_config.base.length + our_settings.locale.length + 1);
+                relpath = subpath.split('/');
+            }
+
+            function findAppReference(resolve, reject) {
                 var offset = 1;
                 function exists() {
                     var _p, segs = relpath.concat([]);  // copy
@@ -103,6 +134,11 @@ define(function(require, exports, module) {
                 }
                 exists();
             }
+            console.log(subpath, 'prior');
+            function findDirsReference(resolve, reject) {
+                relpath.unshift('en-US');
+                resolve(found_config.base + relpath.join('/'));
+            }
             var node = data.details;
             while (subpath && node) {
                 if (!node.children) {
@@ -112,7 +148,7 @@ define(function(require, exports, module) {
                     var leaf = node.children[i][0];
                     var child = node.children[i][1];
                     if (subpath === leaf) {
-                        return [l10n, new Promise(findReference), child.value];
+                        return [l10n, new Promise(found_config.type === 'app' ? findAppReference : findDirsReference), child.value];
                     }
                     if (subpath.indexOf(leaf + '/') === 0) {
                         subpath = subpath.substr(leaf.length + 1);

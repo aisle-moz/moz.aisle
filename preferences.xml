@@ -20,7 +20,7 @@
                 <a:button id="btnAddCompareLocales"
                     style="line-height: 22px" height="24" margin="-2 5 -2 0"
                     skin="blackbutton">compare-locales</a:button>
-                <a:button id="btnAddCompareDirs" disabled="true"
+                <a:button id="btnAddCompareDirs"
                     style="line-height: 22px" height="24" margin="-2 0 -2 0"
                     skin="blackbutton">compare-dirs</a:button>
             </a:hbox>

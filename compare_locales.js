@@ -75,7 +75,7 @@ define(function(require, exports, module) {
                 return;
             }
             var root = {
-                label: e.using.l10n,
+                label: e.using.l10n || (e.using.base + our_settings.locale),
                 isOpen: true,
                 items: []
             };
